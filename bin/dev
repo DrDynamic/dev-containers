@@ -1,19 +1,38 @@
 #!/bin/bash
 
-if [[ $(docker container inspect -f '{{.State.Status}}' kali) == 'exited' ]]; then
-  docker start -i
-elif [[ $(docker container inspect -f '{{.State.Status}}' kali) == 'running' ]]; then
-  docker exec -it bash
-elif [[ -z $(docker ps --filter 'name=kali' --format '{{.Names}}') ]]; then
-  docker run --rm -it --name kali \
-    -e XDG_RUNTIME_DIR=/tmp \
-    -e WAYLAND_DISPLAY=$WAYLAND_DISPLAY \
-    -e QT_QPA_PLATFORM=wayland \
-    -v $XDG_RUNTIME_DIR/$WAYLAND_DISPLAY:/tmp/$WAYLAND_DISPLAY \
-    -v /home/mweber/tmp:/pwn \
-    --cap-add=SYS_PTRACE \
-    --security-opt seccomp=unconfined \
-    mweber/kali bash
+container_name="dev-container-zig"
+
+#temp=$(realpath "$0") && dirname "$temp"
+project=$(dirname "$(realpath $0)")
+
+#projectPath=$(realpath "$temp/..")
+
+echo $project
+
+exit 0
+
+# - add --build argument
+# - verify that a valid containername is given
+# - get state of container
+# - decide to build, start or log into container
+# - add .env config
+
+# Check if the container exists
+if docker inspect "$container_name" >/dev/null 2>&1; then
+  echo "The container $container_name exists."
+
+  # Check if the container is running
+  if $(docker inspect -f '{{.State.Status}}' "$container_name" | grep -q "running"); then
+    echo "The container $container_name is running."
+  else
+    echo "The container $container_name is not running."
+
+    # Start the container if it is not running
+    docker start "$container_name"
+  fi
 else
-  echo "Container is probably starting, wait..."
+  echo "The container $container_name does not exist."
+
+  # Create and start the container if it does not exist
+  docker build -d --name ${container_name}
 fi
