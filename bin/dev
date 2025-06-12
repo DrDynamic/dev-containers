@@ -2,20 +2,62 @@
 
 container_name="dev-container-zig"
 
-#temp=$(realpath "$0") && dirname "$temp"
-project=$(dirname "$(realpath $0)")
+root=$(realpath "$(dirname $0)/..")
+container_dir=$(dirname "$0")/../containers
 
-#projectPath=$(realpath "$temp/..")
+#default arguments
+rebuild=false
+user="developer"
 
-echo $project
+# check input args
+while [ $# -gt 0 ]; do
+  case "$1" in
+  --build)
+    rebuild=true
+    ;;
+  --root)
+    user="root"
+    ;;
+  -c=* | --command=*)
+    command="${1#*=}"
+    ;;
+  -s=* | --shell=*)
+    shell="${1#*=}"
+    ;;
+  --cwd=*)
+    cwd="${1#*=}"
+    
+  *)
+    if [[ $1 != -* ]] && [ -z "$image" ]; then
+      # don't take anything that starts with '-'
+      # and only take an image one time
+      # that prevents, that typos or unknown flags are interpreted as container
+      echo "no image set: $image"
+      image="${1}"
+    else
+      echo "Unknown Argument: '$1'"
+    fi
+    ;;
+  esac
+  shift
+done
 
-exit 0
 
-# - add --build argument
+
+echo "rebuild: $rebuild
+user:    $user
+command: $command
+shell:   $shell
+cwd:     $cwd
+image:   $image
+------------------"
+
 # - verify that a valid containername is given
 # - get state of container
 # - decide to build, start or log into container
 # - add .env config
+
+container_name="dev-container-$image"
 
 # Check if the container exists
 if docker inspect "$container_name" >/dev/null 2>&1; then
@@ -24,6 +66,7 @@ if docker inspect "$container_name" >/dev/null 2>&1; then
   # Check if the container is running
   if $(docker inspect -f '{{.State.Status}}' "$container_name" | grep -q "running"); then
     echo "The container $container_name is running."
+  docker exec -it --user=$user $container_name sh -c 'cd "'
   else
     echo "The container $container_name is not running."
 
@@ -32,6 +75,10 @@ if docker inspect "$container_name" >/dev/null 2>&1; then
   fi
 else
   echo "The container $container_name does not exist."
+if [ ! -d "$container_dir/$image/Dockerfile" ] ; then 
+  echo ""
+fi
+
 
   # Create and start the container if it does not exist
   docker build -d --name ${container_name}

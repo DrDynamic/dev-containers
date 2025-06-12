@@ -13,14 +13,16 @@ fi
 apt-get update -yqq &&
   apt-get install -yqq \
     zsh \
+    curl \
+    git \
+    autojump \
+    neovim \
     sudo
 
-# Update or create user
+# allow passwordless sudo
+echo "%sudo ALL=(ALL) NOPASSWD: ALL" >/etc/sudoers.d/nopasswd
 
-USERNAME="developer"
-# TODO: get ids from env
-USER_UID=1000
-USER_GID=1000
+# Update or create user
 group_name="${USERNAME}"
 
 if id -u ${USERNAME} >/dev/null 2>&1; then
@@ -42,3 +44,9 @@ else
   groupadd --gid $USER_GID $USERNAME
   useradd -s /bin/bash --uid $USER_UID --gid $USERNAME -m $USERNAME
 fi
+
+su
+
+# install oh-my-zsh
+sudo -u ${USERNAME} sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
+echo "oh-my-zsh installed!"

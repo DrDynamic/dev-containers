@@ -1,0 +1,31 @@
+x-build-settings: &build-settings
+  USERNAME: developer
+  USER_UID: 1000
+  USER_GID: 1000
+x-volumes: &volumes
+  - dev-home:/home/developer
+  - ../build/zshrc:/home/developer/.zshrc
+  - ~/.config/dotbot/home/config/neovim/:/home/developer/.config/nvim
+  - ~/Projects/:/home/developer/Projects/ 
+
+volumes:
+  dev-home:
+    name: dev-home
+
+services:
+  zig:
+    build: 
+      context: ../
+      dockerfile: containers/zig/Dockerfile
+      args:
+        BUILD_DIR: containers/zig/
+        MINISIGN_VERSION: "0.12"
+        ZIG_VERSION: "0.14.1"
+        ZLS_VERSION: "0.14.0"
+        <<: *build-settings
+    image: dev/zig
+    container_name: dev-zig
+    volumes: *volumes
+
+
+
