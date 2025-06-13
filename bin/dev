@@ -4,10 +4,15 @@ container_name="dev-container-zig"
 
 root=$(realpath "$(dirname $0)/..")
 container_dir=$(dirname "$0")/../containers
+compose_file="${container_dir}/docker-compose.yml"
+env_file="${root}/.env"
+
+source $env_file
 
 #default arguments
 rebuild=false
 user="developer"
+shell="zsh"
 
 # check input args
 while [ $# -gt 0 ]; do
@@ -26,14 +31,13 @@ while [ $# -gt 0 ]; do
     ;;
   --cwd=*)
     cwd="${1#*=}"
-    
+    ;;
   *)
-    if [[ $1 != -* ]] && [ -z "$image" ]; then
+    if [[ $1 != -* ]] && [ -z "$service" ]; then
       # don't take anything that starts with '-'
       # and only take an image one time
       # that prevents, that typos or unknown flags are interpreted as container
-      echo "no image set: $image"
-      image="${1}"
+      service="${1}"
     else
       echo "Unknown Argument: '$1'"
     fi
@@ -42,44 +46,49 @@ while [ $# -gt 0 ]; do
   shift
 done
 
-
-
 echo "rebuild: $rebuild
 user:    $user
 command: $command
 shell:   $shell
 cwd:     $cwd
-image:   $image
+service: $service
 ------------------"
 
-# - verify that a valid containername is given
-# - get state of container
-# - decide to build, start or log into container
-# - add .env config
+compose="docker compose -f $compose_file --env-file $env_file"
 
-container_name="dev-container-$image"
+if [ -z "$cwd" ]; then
+  eval host_path=$PROJECT_PATH_HOST   # resolve tilde
+  host_path=$(readlink -f $host_path) # resolve relative path
 
-# Check if the container exists
-if docker inspect "$container_name" >/dev/null 2>&1; then
-  echo "The container $container_name exists."
+  working_dir=$(pwd)
+  container_cwd="${working_dir/host_path/}" # replace $host_path with '' (nothing) in working_dir
 
-  # Check if the container is running
-  if $(docker inspect -f '{{.State.Status}}' "$container_name" | grep -q "running"); then
-    echo "The container $container_name is running."
-  docker exec -it --user=$user $container_name sh -c 'cd "'
-  else
-    echo "The container $container_name is not running."
-
-    # Start the container if it is not running
-    docker start "$container_name"
+  if [ -d $host_path/$container_cwd ]; then
+    cwd=$container_cwd
   fi
+  cwd=""
+fi
+
+# validate service name
+if ! $compose config --services | grep -q "^${service}$"; then
+  echo "There is no dev-container with the name '${service}'"
+  exit 1
+fi
+
+compose_args="--user=$user --rm $service"
+
+if $rebuild; then
+  compose_args="--build $compose_args"
+fi
+
+compose_args="$compose_args sh -c '"'cd "$PROJECT_PATH'/$cwd'"'" &&"
+
+if [ -n "$command" ]; then
+  compose_args="$compose_args $command"
 else
-  echo "The container $container_name does not exist."
-if [ ! -d "$container_dir/$image/Dockerfile" ] ; then 
-  echo ""
+  compose_args="$compose_args $shell"
 fi
 
+compose_args="$compose_args'"
 
-  # Create and start the container if it does not exist
-  docker build -d --name ${container_name}
-fi
+eval "$compose run $compose_args"

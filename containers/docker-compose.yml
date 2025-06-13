@@ -6,7 +6,9 @@ x-volumes: &volumes
   - dev-home:/home/developer
   - ../build/zshrc:/home/developer/.zshrc
   - ~/.config/dotbot/home/config/neovim/:/home/developer/.config/nvim
-  - ~/Projects/:/home/developer/Projects/ 
+  - ${PROJECT_PATH_HOST}:${PROJECT_PATH_CONTAINER} 
+x-environment: &environment
+  - PROJECT_PATH=${PROJECT_PATH_CONTAINER}
 
 volumes:
   dev-home:
@@ -26,6 +28,5 @@ services:
     image: dev/zig
     container_name: dev-zig
     volumes: *volumes
-
-
+    environment: *environment
 
