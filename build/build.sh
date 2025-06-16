@@ -17,6 +17,7 @@ apt-get update -yqq &&
     git \
     autojump \
     neovim \
+    unzip \
     sudo
 
 # allow passwordless sudo

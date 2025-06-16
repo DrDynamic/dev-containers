@@ -64,16 +64,10 @@ if [ -z "$cwd" ]; then
   working_dir=$(pwd)
   container_cwd="${working_dir/$host_path/}" # replace $host_path with '' (nothing) in working_dir
 
-  echo "
-  $working_dir - $host_path = $container_cwd"
-
-  echo "test container pwd $host_path/$container_cwd"
   if [ -d $host_path/$container_cwd ]; then
-    echo "exists! we use $container_cwd"
     cwd=$container_cwd
   fi
 fi
-echo "cwd=$cwd"
 
 # validate service name
 if ! $compose config --services | grep -q "^${service}$"; then
