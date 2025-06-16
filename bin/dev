@@ -46,28 +46,34 @@ while [ $# -gt 0 ]; do
   shift
 done
 
-echo "rebuild: $rebuild
-user:    $user
-command: $command
-shell:   $shell
-cwd:     $cwd
-service: $service
-------------------"
+#echo "rebuild: $rebuild
+#user:    $user
+#command: $command
+#shell:   $shell
+#cwd:     $cwd
+#service: $service
+#------------------"
 
 compose="docker compose -f $compose_file --env-file $env_file"
 
+cwd=""
 if [ -z "$cwd" ]; then
   eval host_path=$PROJECT_PATH_HOST   # resolve tilde
   host_path=$(readlink -f $host_path) # resolve relative path
 
   working_dir=$(pwd)
-  container_cwd="${working_dir/host_path/}" # replace $host_path with '' (nothing) in working_dir
+  container_cwd="${working_dir/$host_path/}" # replace $host_path with '' (nothing) in working_dir
 
+  echo "
+  $working_dir - $host_path = $container_cwd"
+
+  echo "test container pwd $host_path/$container_cwd"
   if [ -d $host_path/$container_cwd ]; then
+    echo "exists! we use $container_cwd"
     cwd=$container_cwd
   fi
-  cwd=""
 fi
+echo "cwd=$cwd"
 
 # validate service name
 if ! $compose config --services | grep -q "^${service}$"; then
