@@ -17,7 +17,8 @@ ARG ZLS_VERSION="0.14.0"
 
 RUN apt-get update -yqq \
 && apt-get install -yqq \
-  xz-utils
+  xz-utils \
+  ca-certificates
 
 RUN mkdir -p /opt/build
 ADD --chown=developer:developer --chmod=555 /build/build.sh /opt/build/build.sh
