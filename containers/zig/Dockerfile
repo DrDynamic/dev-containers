@@ -36,4 +36,9 @@ ENV PATH="$PATH:/opt/bin"
 ADD --chown=developer:developer --chmod=555 ${BUILD_DIR}/install-zig.sh /opt/build/install-zig.sh
 RUN /opt/build/install-zig.sh ${MINISIGN_VERSION} ${ZIG_VERSION} ${ZLS_VERSION}
 
+USER root
+ADD --chown=developer:developer --chmod=555 ${BUILD_DIR}/install-dart.sh /opt/build/install-dart.sh
+RUN /opt/build/install-dart.sh
+
+USER developer
 WORKDIR /home/developer
